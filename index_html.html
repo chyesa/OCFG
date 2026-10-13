@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바다를 구하는 낚시왕 - 해양 쓰레기 분리배출 환경 교육 게임</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-slate-900 text-slate-800 h-screen w-screen overflow-hidden flex flex-col justify-between">
+
+    <!-- Top HUD Bar -->
+    <header id="hud" class="hidden relative z-20 bg-sky-900/90 text-white px-3 md:px-6 py-2 shadow-lg backdrop-blur flex justify-between items-center border-b border-sky-400/30">
+        <div class="flex items-center gap-2 md:gap-4">
+            <div class="flex items-center gap-1.5 md:gap-2 bg-sky-950/70 px-2.5 md:px-3 py-1 rounded-full border border-sky-400/30">
+                <i class="fa-solid fa-trophy text-amber-400 text-sm md:text-lg"></i>
+                <span class="text-xs text-sky-200 hidden sm:inline">점수:</span>
+                <span id="hud-score" class="font-jua text-base md:text-xl text-amber-300">0</span>
+            </div>
+            <div class="flex items-center gap-1.5 md:gap-2 bg-sky-950/70 px-2.5 md:px-3 py-1 rounded-full border border-sky-400/30">
+                <i class="fa-solid fa-crown text-yellow-400 text-sm md:text-lg"></i>
+                <span class="text-xs text-sky-200 hidden sm:inline">최고:</span>
+                <span id="hud-high-score" class="font-jua text-base md:text-xl text-yellow-400">0</span>
+            </div>
+            <div class="flex items-center gap-1.5 md:gap-2 bg-sky-950/70 px-2.5 md:px-3 py-1 rounded-full border border-sky-400/30">
+                <i class="fa-solid fa-bolt text-yellow-300 text-sm md:text-lg"></i>
+                <span class="text-xs text-sky-200 hidden sm:inline">콤보:</span>
+                <span id="hud-combo" class="font-jua text-base md:text-xl text-yellow-300">0x</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-3">
+            <!-- Sea Cleanliness Bar -->
+            <div class="flex items-center gap-2 bg-sky-950/70 px-2.5 md:px-3 py-1 rounded-full border border-sky-400/30 w-28 md:w-48">
+                <i class="fa-solid fa-leaf text-emerald-400 text-xs md:text-sm"></i>
+                <div class="w-full bg-slate-700 rounded-full h-2.5 md:h-3 overflow-hidden border border-slate-500">
+                    <div id="cleanliness-bar" class="bg-gradient-to-r from-teal-400 to-emerald-400 h-full w-[30%] transition-all duration-500"></div>
+                </div>
+                <span id="cleanliness-text" class="text-[10px] md:text-xs font-bold text-emerald-300">30%</span>
+            </div>
+
+            <!-- Timer -->
+            <div class="flex items-center gap-1.5 md:gap-2 bg-rose-950/80 px-2.5 md:px-3 py-1 rounded-full border border-rose-400/40">
+                <i class="fa-solid fa-clock text-rose-400 text-sm md:text-lg animate-pulse"></i>
+                <span id="hud-timer" class="font-jua text-base md:text-xl text-rose-200">90초</span>
+            </div>
+
+            <!-- Sound & Pause Buttons -->
+            <button id="btn-sound-toggle" class="p-1.5 md:p-2 bg-sky-800 hover:bg-sky-700 rounded-full text-white w-8 h-8 md:w-9 md:h-9 flex items-center justify-center transition" title="소리 켜기/끄기">
+                <i id="icon-sound" class="fa-solid fa-volume-high text-xs md:text-base"></i>
+            </button>
+            <button id="btn-pause" class="p-1.5 md:p-2 bg-amber-600 hover:bg-amber-500 rounded-full text-white w-8 h-8 md:w-9 md:h-9 flex items-center justify-center transition" title="일시정지">
+                <i class="fa-solid fa-pause text-xs md:text-base"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Canvas Area for Fishing -->
+    <main class="relative flex-1 w-full h-full overflow-hidden">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-pointer"></canvas>
+
+        <!-- Floating Target Marker / Pointer Visual -->
+        <div id="target-indicator" class="hidden absolute pointer-events-none transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <div class="w-10 h-10 md:w-12 md:h-12 border-2 border-dashed border-yellow-300 rounded-full animate-spin"></div>
+            <i class="fa-solid fa-crosshairs text-yellow-300 text-xl md:text-2xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></i>
+        </div>
+
+        <!-- Controls Hint Overlay -->
+        <div id="game-controls-hint" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-slate-900/85 text-white px-3 md:px-5 py-2 rounded-full border border-sky-400/30 text-xs md:text-sm shadow-lg flex items-center gap-2 md:gap-4 max-w-[95vw]">
+            <span class="truncate"><i class="fa-solid fa-mouse-pointer text-sky-300 mr-1"></i> 쓰레기를 터치/클릭하여 건져 올리세요!</span>
+            <button id="btn-cast-hook" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white px-3 md:px-4 py-1 rounded-full font-jua text-xs md:text-sm shadow border border-amber-300 transition active:scale-95 flex-shrink-0">
+                <i class="fa-solid fa-hook mr-1"></i> 던지기 (Space)
+            </button>
+        </div>
+    </main>
+
+    <!-- START SCREEN MODAL -->
+    <section id="screen-start" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-b from-sky-900/90 via-sky-800/95 to-slate-950/95 backdrop-blur-md">
+        <div class="max-w-xl w-full glass-card rounded-3xl p-5 md:p-8 text-center shadow-2xl border-4 border-sky-300/40 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-40 h-40 bg-sky-400/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-emerald-400/20 rounded-full blur-2xl"></div>
+
+            <div class="inline-block bg-sky-100 text-sky-800 text-xs font-bold px-3 py-1 rounded-full mb-3 shadow-inner">
+                🌊 해양 쓰레기 분리배출 환경 교육 게임
+            </div>
+
+            <h1 class="font-jua text-3xl md:text-5xl text-sky-900 drop-shadow mb-2">
+                바다를 구하는 <span class="text-amber-500">낚시왕</span>
+            </h1>
+            <p class="text-slate-600 text-xs md:text-sm mb-4">
+                바닷속 쓰레기를 낚아 올리고 올바르게 분리수거하여 깨끗한 바다 생태계를 만들어주세요!
+            </p>
+
+            <!-- High Score Badge -->
+            <div class="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-1.5 rounded-full mb-4 shadow-sm">
+                <i class="fa-solid fa-crown text-amber-500"></i>
+                <span class="text-xs font-bold text-slate-600">최고 기록:</span>
+                <span id="start-high-score" class="font-jua text-amber-600 text-lg">0점</span>
+            </div>
+
+            <!-- Difficulty Selection -->
+            <div class="mb-5 bg-sky-50/80 p-3 rounded-2xl border border-sky-200">
+                <label class="block text-xs font-bold text-sky-900 mb-2">난이도 선택</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="btn-diff py-2 rounded-xl text-xs md:text-sm font-bold border-2 transition bg-sky-600 text-white border-sky-600 shadow" data-diff="easy">
+                        🌱 쉬움 (120초)
+                    </button>
+                    <button class="btn-diff py-2 rounded-xl text-xs md:text-sm font-bold border-2 transition bg-white text-slate-700 border-slate-300 hover:border-sky-400" data-diff="normal">
+                        🌊 보통 (90초)
+                    </button>
+                    <button class="btn-diff py-2 rounded-xl text-xs md:text-sm font-bold border-2 transition bg-white text-slate-700 border-slate-300 hover:border-sky-400" data-diff="hard">
+                        ⚡ 어려움 (60초)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col gap-2.5">
+                <button id="btn-start-game" class="w-full py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-900 font-jua text-xl md:text-2xl rounded-2xl shadow-lg border-2 border-amber-200 transition transform hover:-translate-y-0.5 active:translate-y-0">
+                    <i class="fa-solid fa-play mr-2"></i> 게임 시작하기
+                </button>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button id="btn-open-tutorial" class="py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-800 font-bold text-xs md:text-sm rounded-xl border border-sky-300 transition">
+                        <i class="fa-solid fa-book-open mr-1"></i> 게임 방법
+                    </button>
+                    <button id="btn-open-codex" class="py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs md:text-sm rounded-xl border border-emerald-300 transition">
+                        <i class="fa-solid fa-recycle mr-1"></i> 분리배출 도감
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WASTE SORTING PANEL MODAL -->
+    <section id="modal-sorting" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="max-w-2xl w-full glass-card rounded-3xl p-4 md:p-6 shadow-2xl border-2 border-sky-300 flex flex-col max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-slate-200 pb-2.5 mb-3">
+                <div>
+                    <span class="bg-amber-100 text-amber-800 text-[11px] md:text-xs font-bold px-2.5 py-0.5 rounded-full">🎣 쓰레기 인양 성공!</span>
+                    <h2 id="modal-trash-name" class="font-jua text-xl md:text-2xl text-slate-800 mt-1">무색 투명 음료 페트병</h2>
+                </div>
+                <div class="text-right">
+                    <span id="modal-trash-mark" class="inline-block bg-sky-600 text-white text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">
+                        표시: 무색페트
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 bg-sky-50/80 p-3 rounded-2xl border border-sky-200">
+                <div class="flex flex-col items-center justify-center bg-white p-2.5 rounded-xl border border-sky-100 shadow-sm">
+                    <div id="modal-trash-icon" class="text-5xl md:text-6xl mb-1">🍾</div>
+                    <span id="modal-trash-material" class="text-[11px] text-slate-500 font-bold">대표재질: PET</span>
+                </div>
+                <div class="sm:col-span-2 text-xs text-slate-700 flex flex-col justify-center space-y-1.5">
+                    <p class="bg-white/90 p-2 rounded-lg border border-sky-100">
+                        <strong class="text-sky-900"><i class="fa-solid fa-circle-info mr-1"></i>주요 구성품:</strong> 
+                        <span id="modal-trash-parts">페트병 본체, 비닐 라벨, 플라스틱 뚜껑</span>
+                    </p>
+                    <p class="bg-emerald-50 p-2 rounded-lg border border-emerald-200 text-emerald-900">
+                        <strong><i class="fa-solid fa-sparkles mr-1"></i>배출 전 준비:</strong> 
+                        <span id="modal-trash-prep">내용물을 비우고 라벨을 제거한 뒤 압착하세요.</span>
+                    </p>
+                </div>
+            </div>
+
+            <h3 class="font-jua text-base md:text-lg text-slate-800 mb-2.5 text-center">
+                <i class="fa-solid fa-recycle text-emerald-600"></i> 올바른 분리수거함을 선택해주세요!
+            </h3>
+            
+            <div id="bin-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-1">
+                <!-- Dynamic Bins -->
+            </div>
+        </div>
+    </section>
+
+    <!-- FEEDBACK RESULT MODAL -->
+    <section id="modal-feedback" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+        <div class="max-w-md w-full glass-card rounded-3xl p-5 md:p-6 text-center shadow-2xl border-4 border-white relative overflow-hidden">
+            <div id="feedback-icon-container" class="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto flex items-center justify-center text-3xl md:text-4xl mb-3 shadow-inner">
+                <i id="feedback-icon" class="fa-solid fa-check"></i>
+            </div>
+
+            <h3 id="feedback-title" class="font-jua text-2xl md:text-3xl mb-1.5">정답입니다!</h3>
+            <div id="feedback-score-badge" class="inline-block bg-emerald-100 text-emerald-800 text-xs md:text-sm font-bold px-3 py-1 rounded-full mb-3">
+                +100점 획득!
+            </div>
+
+            <div id="feedback-desc" class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs md:text-sm text-slate-700 text-left leading-relaxed mb-4 max-h-40 overflow-y-auto">
+                해설 내용이 여기에 들어갑니다.
+            </div>
+
+            <button id="btn-next-trash" class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-jua text-lg md:text-xl rounded-xl shadow transition">
+                다음 쓰레기 낚시하기 <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- TUTORIAL MODAL -->
+    <section id="modal-tutorial" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="max-w-lg w-full glass-card rounded-3xl p-5 md:p-6 shadow-2xl border-2 border-sky-300">
+            <h2 class="font-jua text-xl md:text-2xl text-sky-900 border-b pb-2 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-compass text-amber-500"></i> 게임 방법
+            </h2>
+            <div class="space-y-2.5 text-xs md:text-sm text-slate-700 leading-relaxed mb-5">
+                <div class="flex items-start gap-2.5 bg-sky-50 p-2.5 rounded-xl">
+                    <span class="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <p>바닷속에 떠다니는 쓰레기를 클릭하거나 터치하여 목표 대상으로 선택하세요.</p>
+                </div>
+                <div class="flex items-start gap-2.5 bg-sky-50 p-2.5 rounded-xl">
+                    <span class="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <p><strong>[던지기]</strong> 버튼이나 스페이스바를 눌러 낚싯줄로 쓰레기를 인양합니다.</p>
+                </div>
+                <div class="flex items-start gap-2.5 bg-sky-50 p-2.5 rounded-xl">
+                    <span class="w-5 h-5 bg-sky-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <p>인양된 쓰레기의 <strong>분리배출 마크</strong>와 <strong>구성 재질</strong>을 확인하고 올바른 수거함을 선택하세요.</p>
+                </div>
+                <div class="flex items-start gap-2.5 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                    <span class="w-5 h-5 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
+                    <p class="text-emerald-900">올바르게 분리배출할수록 바다 청결도와 연속 콤보가 상승하여 높은 점수를 획득합니다!</p>
+                </div>
+            </div>
+            <button id="btn-close-tutorial" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-jua text-base md:text-lg rounded-xl transition">
+                확인했습니다
+            </button>
+        </div>
+    </section>
+
+    <!-- RECYCLING CODEX MODAL -->
+    <section id="modal-codex" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="max-w-3xl w-full glass-card rounded-3xl p-4 md:p-6 shadow-2xl border-2 border-emerald-300 flex flex-col max-h-[88vh]">
+            <div class="flex justify-between items-center border-b pb-2.5 mb-3">
+                <h2 class="font-jua text-xl md:text-2xl text-emerald-900 flex items-center gap-2">
+                    <i class="fa-solid fa-book text-emerald-600"></i> 분리배출 도감
+                </h2>
+                <button id="btn-close-codex" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="codex-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 flex-1">
+                <!-- Codex Items dynamically inserted -->
+            </div>
+        </div>
+    </section>
+
+    <!-- GAME OVER / RESULTS MODAL -->
+    <section id="modal-result" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+        <div class="max-w-md md:max-w-lg w-full glass-card rounded-3xl p-5 md:p-7 text-center shadow-2xl border-4 border-sky-300 relative overflow-hidden">
+            <span class="bg-sky-100 text-sky-800 text-xs font-bold px-3 py-1 rounded-full mb-2 inline-block">
+                🌊 바다 청소 작업 완료
+            </span>
+            <h2 class="font-jua text-2xl md:text-3xl text-slate-800 mb-1">최종 결과 보고서</h2>
+            <p id="result-grade-title" class="text-emerald-600 font-bold text-sm md:text-base mb-4">바다의 수호자 (S등급)</p>
+
+            <!-- Grade Badge & Main Metrics -->
+            <div class="grid grid-cols-3 gap-2 md:gap-3 bg-sky-50 p-3 rounded-2xl mb-4 border border-sky-200">
+                <div class="bg-white p-2 rounded-xl shadow-sm border border-sky-100">
+                    <span class="text-[11px] text-slate-500">최종 점수</span>
+                    <div id="result-score" class="font-jua text-lg md:text-2xl text-amber-500">0</div>
+                </div>
+                <div class="bg-white p-2 rounded-xl shadow-sm border border-sky-100">
+                    <span class="text-[11px] text-slate-500">분류 정확도</span>
+                    <div id="result-accuracy" class="font-jua text-lg md:text-2xl text-emerald-600">0%</div>
+                </div>
+                <div class="bg-white p-2 rounded-xl shadow-sm border border-sky-100">
+                    <span class="text-[11px] text-slate-500">바다 청결도</span>
+                    <div id="result-cleanliness" class="font-jua text-lg md:text-2xl text-sky-600">30%</div>
+                </div>
+            </div>
+
+            <!-- Detail Breakdown -->
+            <div class="grid grid-cols-4 gap-1 md:gap-2 text-[11px] md:text-xs text-slate-700 mb-4 bg-slate-100 p-2.5 rounded-xl">
+                <div>인양: <strong id="result-total-count" class="text-slate-900">0개</strong></div>
+                <div>정답: <strong id="result-correct-count" class="text-emerald-600">0개</strong></div>
+                <div>오답: <strong id="result-wrong-count" class="text-rose-600">0개</strong></div>
+                <div>최대콤보: <strong id="result-max-combo" class="text-amber-600">0회</strong></div>
+            </div>
+
+            <!-- Environmental Message -->
+            <div id="result-env-message" class="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl text-xs md:text-sm text-left mb-5 leading-relaxed">
+                올바른 분리배출이 소중한 해양 생태계를 지킵니다.
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <button id="btn-restart" class="py-2.5 md:py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-jua text-base md:text-lg rounded-xl shadow hover:from-amber-400 hover:to-amber-500 transition">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> 다시 하기
+                </button>
+                <button id="btn-go-home" class="py-2.5 md:py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-jua text-base md:text-lg rounded-xl transition">
+                    <i class="fa-solid fa-house mr-1"></i> 메인 화면
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Custom Script File -->
+    <script src="./script.js" defer></script>
+</body>
+</html>

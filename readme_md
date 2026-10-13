@@ -1,0 +1,54 @@
+# 🌊 바다를 구하는 낚시왕 (Ocean Cleanup Fishing Game)
+
+> 대한민국 환경부 분리배출 기준을 바탕으로 제작된 **해양 쓰레기 분리배출 웹 환경 교육 게임**입니다.
+
+---
+
+## 📌 주요 특징
+- **노코드/노빌드 배포 가능**: Node.js, npm, Webpack 등 빌드 도구 없이 HTML, CSS, JS만으로 배포됩니다.
+- **실제 환경 교육 기준 반영**: 대한민국 환경부 재활용 분리배출 표준 지침 준수.
+- **반응형 웹 디자인**: 모바일, 태블릿, PC 모니터 화면 크기에 맞추어 자동 대응.
+- **최고 점수 자동 저장**: 브라우저의 `localStorage`를 사용하여 최고 점수를 기록합니다.
+
+---
+
+## 📂 프로젝트 파일 구조
+
+```text
+ocean-cleanup-game/
+├── index.html       # 게임 레이아웃 및 모달 UI
+├── style.css        # 커스텀 스타일, 스크롤바, 애니메이션
+├── script.js        # Canvas 낚시 로직, 분리배출 판정, 최고점수 저장
+├── README.md        # 프로젝트 설명 및 배포 안내
+└── .nojekyll        # GitHub Pages 정적 배포 호환용 빈 파일
+```
+
+---
+
+## 🚀 로컬 실행 방법
+1. 저장소를 다운로드 받거나 클론합니다.
+2. `index.html` 파일을 크롬, 엣지, 사파리 등 임의의 웹 브라우저로 엽니다.
+
+---
+
+## 🌐 GitHub Pages 무료 배포 방법
+
+### 1단계: GitHub 저장소 생성 및 파일 업로드
+1. [GitHub](https://github.com)에 로그인하고 오른쪽 위의 `+` 버튼을 눌러 **New repository**를 클릭합니다.
+2. Repository name에 `ocean-cleanup-game`을 입력합니다.
+3. Public을 선택한 후 **Create repository** 버튼을 클릭합니다.
+4. 다운로드한 `index.html`, `style.css`, `script.js`, `README.md`, `.nojekyll` 파일들을 최상위(Root) 디렉터리에 업로드(uploading an existing file)합니다.
+
+### 2단계: GitHub Pages 활성화
+1. 저장소 상단 메뉴의 **Settings**로 이동합니다.
+2. 좌측 메뉴에서 **Pages**를 클릭합니다.
+3. Build and deployment의 Source를 **Deploy from a branch**로 설정합니다.
+4. Branch를 `main` (또는 `master`) 디렉터리를 `/(root)`로 지정하고 **Save**를 누릅니다.
+5. 약 1~2분 후 배포가 완료되면 상단에 웹사이트 주소가 생성됩니다.
+
+> 💡 **배포 URL 예시**: `https://<사용자-아이디>.github.io/ocean-cleanup-game/`
+
+---
+
+## ⚠️ 데이터 저장 관련 안내
+본 게임의 최고 점수 저장 기능은 접속한 **사용자 개인 브라우저의 `localStorage`**에 보관됩니다. 서버 DB를 사용하지 않으므로, 기기나 브라우저를 변경하거나 쿠키/캐시를 삭제하면 기록이 초기화될 수 있습니다.
